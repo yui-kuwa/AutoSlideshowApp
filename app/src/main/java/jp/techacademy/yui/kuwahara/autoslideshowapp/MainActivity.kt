@@ -109,12 +109,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 list_Size = cnt
 
             } while (cursor.moveToNext())
+            image.setImageURI(uriList[0])//初めの画像だけ表示
         }
-        image.setImageURI(uriList[0])//初めの画像だけ表示
         cursor!!.close()
     }
 
-    private fun imageSlide(buttonFlag: Boolean) {//ボタンで画像遷移
+    private fun imageSlide() {//ボタンで画像遷移
         if(backButtonFlag){//backボタンが押されたら
             if(num != 0) {//現在表示している画像が1番目（uriList[0]）でない時
                 num--//1つ前の画像を表示
@@ -153,14 +153,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onClick(v: View) {
         // パーミッションが許可されている
-        if(ContentsInfoFlag) {
+        if(ContentsInfoFlag && list_Size != 0) {
             //backボタンが押されたら
             if (v == back_button && mTimer == null) {
-                //backButtonFlag = true
-                imageSlide(backButtonFlag)
+                backButtonFlag = true
+                imageSlide()
             } else if (v == next_button && mTimer == null) {//nextボタンが押されたら
-                //nextButtonFlag = true
-                imageSlide(nextButtonFlag)
+                nextButtonFlag = true
+                imageSlide()
             } else if (v == start_stop_button) {//startボタン、stopボタンが押されたら
                 if (mTimer == null) {//スライドショーがstopしてる状態
                     start_stop_button.text = "Stop"
