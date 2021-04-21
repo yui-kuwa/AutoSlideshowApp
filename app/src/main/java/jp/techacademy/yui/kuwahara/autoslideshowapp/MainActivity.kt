@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     var backButtonFlag: Boolean = false
     var nextButtonFlag: Boolean = false
-    var startStopButtonFlag: Boolean = true//trueがstart falseがstop
     var ContentsInfoFlag: Boolean = false
 
     var uriList = mutableListOf<Uri>()//Uriを格納する配列を作成
@@ -30,7 +29,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     var num: Int = 0//現在の配列の要素
 
     private var mTimer: Timer? = null
-    private var mTimerSec = 0.0// タイマー用の時間のための変数
     private var mHandler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +66,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
-    /*override fun onRequestPermissionsResult(
+    override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
@@ -77,9 +75,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             PERMISSIONS_REQUEST_CODE ->
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getContentsInfo()
+                    ContentsInfoFlag = true
                 }
         }
-    }*/
+    }
 
     private fun getContentsInfo() {
         // 画像の情報を取得する
@@ -106,8 +105,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     )//実際の画像のURIを取得
 
                 uriList.add(cnt, imageUri)//Uriを順に格納
-                //uriList[cnt] = imageUri
-                //Log.d("ANDROID", "URI : " + imageUri.toString())
                 cnt++
                 list_Size = cnt
 
@@ -117,42 +114,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         cursor!!.close()
     }
 
-    private fun imageSlide() {//ボタンで画像遷移
-        if(backButtonFlag == true){//backボタンが押されたら
+    private fun imageSlide(buttonFlag: Boolean) {//ボタンで画像遷移
+        if(backButtonFlag){//backボタンが押されたら
             if(num != 0) {//現在表示している画像が1番目（uriList[0]）でない時
                 num--//1つ前の画像を表示
-                image.setImageURI(uriList[num])
             }else{//現在表示している画像が1番目の時
-                num = list_Size - 1
-                image.setImageURI(uriList[num])//最後の画像を表示
+                num = list_Size - 1//最後の画像を表示
             }
                 backButtonFlag = false
-        }else if(nextButtonFlag == true){//nextボタンが押されたら
+        }else if(nextButtonFlag){//nextボタンが押されたら
             if(num == list_Size - 1){//現在表示している画像が最後の画像の時
                 num = 0
-                image.setImageURI((uriList[num]))
             }else {
                 num++ //次の画像を表示
-                image.setImageURI(uriList[num])
             }
             nextButtonFlag = false
         }
-    }
-
-    private fun slideTimer(){
-        // タイマーの始動
-        mTimer!!.schedule(object : TimerTask() {
-            override fun run() {
-                mTimerSec += 1
-            }
-        }, 0, 1000) // 最初に始動させるまで100ミリ秒、ループの間隔を100ミリ秒 に設定
+        image.setImageURI(uriList[num])
     }
 
     private fun autoImageSlide(){//自動で画像遷移
-        if(!startStopButtonFlag) {//startボタンを押した時
-            mTimer!!.schedule(object : TimerTask() {
+        if(mTimer != null) {//startボタンを押した時
+            mTimer!!.schedule(object : TimerTask() {//スケジュールがサブスレッド
                 override fun run() {
-                    mTimerSec += 2
                     mHandler.post {
                         if (num == list_Size - 1) {//現在表示している画像が最後の画像の時
                             num = 0
@@ -164,33 +148,28 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
             }, 2000, 2000) // 最初に始動させるまで2000ミリ秒、ループの間隔を2000ミリ秒 に設定
-
-            nextButtonFlag = false
         }
     }
 
     override fun onClick(v: View) {
         // パーミッションが許可されている
         if(ContentsInfoFlag) {
-
             //backボタンが押されたら
-            if (v == back_button && startStopButtonFlag == true) {
-                backButtonFlag = true
-                imageSlide()
-            } else if (v == next_button && startStopButtonFlag == true) {//nextボタンが押されたら
-                nextButtonFlag = true
-                imageSlide()
+            if (v == back_button && mTimer == null) {
+                //backButtonFlag = true
+                imageSlide(backButtonFlag)
+            } else if (v == next_button && mTimer == null) {//nextボタンが押されたら
+                //nextButtonFlag = true
+                imageSlide(nextButtonFlag)
             } else if (v == start_stop_button) {//startボタン、stopボタンが押されたら
-                if (startStopButtonFlag) {//スライドショーがstopしてる状態
-                    startStopButtonFlag = false
+                if (mTimer == null) {//スライドショーがstopしてる状態
                     start_stop_button.text = "Stop"
                     mTimer = Timer()//タイマーの作成
                     autoImageSlide()
                 } else {//スライドショーがstartしている状態
-                    startStopButtonFlag = true
                     start_stop_button.text = "Start"
-                    mTimer!!.cancel()
-                    mTimerSec = 0.0
+                    mTimer!!.cancel()//
+                    mTimer = null
                 }
             }
         }
